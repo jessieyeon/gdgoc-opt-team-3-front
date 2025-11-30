@@ -18,10 +18,10 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: '#0f4a84' }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0f4a84]">
               <span className="font-bold text-lg text-white">Y</span>
             </div>
-            <span className="font-bold text-xl" style={{ color: '#0f4a84' }}>연세 노트</span>
+            <span className="font-bold text-xl text-[#0f4a84]">연세 노트</span>
           </Link>
 
           <div className="hidden md:flex relative w-96">
@@ -39,7 +39,7 @@ export function Header() {
           </Button>
           {user ? (
             <>
-              <Button variant="default" size="sm" asChild className="!bg-[#0f4a84] hover:!bg-[#0f4a84]/90">
+              <Button variant="default" size="sm" asChild className="bg-[#0f4a84] hover:bg-[#0f4a84]/90 text-white">
                 <Link to="/my-page" className="text-white">
                   <User className="h-4 w-4 mr-2 text-white" />
                   마이페이지
@@ -51,7 +51,7 @@ export function Header() {
               </Button>
             </>
           ) : (
-            <Button variant="default" size="sm" asChild className="!bg-[#0f4a84] hover:!bg-[#0f4a84]/90">
+            <Button variant="default" size="sm" asChild className="bg-[#0f4a84] hover:bg-[#0f4a84]/90 text-white">
               <Link to="/login" className="text-white">
                 <User className="h-4 w-4 mr-2 text-white" />
                 로그인/회원가입

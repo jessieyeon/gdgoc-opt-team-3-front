@@ -120,7 +120,7 @@ export function NoteViewer({ noteId }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="relative w-full bg-muted rounded-lg overflow-hidden" style={{ minHeight: '800px' }}>
+            <div className="relative w-full bg-muted rounded-lg overflow-hidden min-h-[800px]">
               <img
                 src={note.previewImage || '/placeholder.svg'}
                 alt="Note content"

@@ -13,9 +13,7 @@ export function SubjectFilter({ subjects = [], selected = '전체', onSelect = (
             variant={isActive ? 'default' : 'outline'}
             size="sm"
             onClick={() => onSelect(subject)}
-            className={`rounded-full ${
-              isActive ? '!bg-[#0f4a84] hover:!bg-[#0f4a84]/90 text-white' : ''
-            }`}
+            className={isActive ? 'rounded-full bg-[#0f4a84] hover:bg-[#0f4a84]/90 text-white' : 'rounded-full'}
           >
             {subject}
           </Button>

@@ -21,10 +21,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser())
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    } else {
-      localStorage.removeItem(STORAGE_KEY)
+    try {
+      if (user) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+      } else {
+        localStorage.removeItem(STORAGE_KEY)
+      }
+    } catch (error) {
+      console.error('Failed to save user to localStorage:', error)
     }
   }, [user])
 
