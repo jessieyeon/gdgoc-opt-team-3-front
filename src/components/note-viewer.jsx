@@ -5,7 +5,7 @@ import { ThumbsUp, ThumbsDown, Download, Bookmark, Share2 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
-import { fetchNoteDetail } from '@/services/mockApi'
+import { fetchNoteDetail, interactWithNote } from '@/services/api'
 
 export function NoteViewer({ noteId }) {
   const [note, setNote] = useState(null)
@@ -26,8 +26,8 @@ export function NoteViewer({ noteId }) {
       .then((data) => {
         if (!active) return
         setNote(data)
-        setLikesCount(data.likes)
-        setDislikesCount(data.dislikes)
+        setLikesCount(data.stats?.likes || 0)
+        setDislikesCount(data.stats?.dislikes || 0)
         setLiked(false)
         setDisliked(false)
         setBookmarked(false)
@@ -47,33 +47,43 @@ export function NoteViewer({ noteId }) {
     }
   }, [noteId])
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!note) return
-    if (liked) {
-      setLiked(false)
-      setLikesCount((prev) => prev - 1)
-    } else {
-      setLiked(true)
-      setLikesCount((prev) => prev + 1)
-      if (disliked) {
-        setDisliked(false)
-        setDislikesCount((prev) => prev - 1)
+    try {
+      await interactWithNote(note.id, liked ? 'dislike' : 'like')
+      if (liked) {
+        setLiked(false)
+        setLikesCount((prev) => Math.max(0, prev - 1))
+      } else {
+        setLiked(true)
+        setLikesCount((prev) => prev + 1)
+        if (disliked) {
+          setDisliked(false)
+          setDislikesCount((prev) => Math.max(0, prev - 1))
+        }
       }
+    } catch (error) {
+      console.error('좋아요 처리 실패:', error)
     }
   }
 
-  const handleDislike = () => {
+  const handleDislike = async () => {
     if (!note) return
-    if (disliked) {
-      setDisliked(false)
-      setDislikesCount((prev) => prev - 1)
-    } else {
-      setDisliked(true)
-      setDislikesCount((prev) => prev + 1)
-      if (liked) {
-        setLiked(false)
-        setLikesCount((prev) => prev - 1)
+    try {
+      await interactWithNote(note.id, disliked ? 'like' : 'dislike')
+      if (disliked) {
+        setDisliked(false)
+        setDislikesCount((prev) => Math.max(0, prev - 1))
+      } else {
+        setDisliked(true)
+        setDislikesCount((prev) => prev + 1)
+        if (liked) {
+          setLiked(false)
+          setLikesCount((prev) => Math.max(0, prev - 1))
+        }
       }
+    } catch (error) {
+      console.error('싫어요 처리 실패:', error)
     }
   }
 
@@ -98,7 +108,11 @@ export function NoteViewer({ noteId }) {
     return null
   }
 
-  const { aiSummary = {}, uploader, relatedNotes = [] } = note
+  const uploader = note.uploader || {}
+  const aiSummary = typeof note.aiSummary === 'string' 
+    ? { summary: note.aiSummary, difficulty: note.difficulty, estimatedTime: note.estimatedTime }
+    : note.aiSummary || {}
+  const relatedNotes = note.relatedNotes || []
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -110,11 +124,11 @@ export function NoteViewer({ noteId }) {
                 <CardTitle className="text-2xl text-balance">{note.title}</CardTitle>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <span className="inline-flex items-center rounded-full bg-secondary px-3 py-1 font-medium text-secondary-foreground">
-                    {note.subject}
+                    {note.major || '기타'}
                   </span>
-                  <span>{note.professor} 교수님</span>
-                  <span>학기: {note.semester}</span>
-                  <span>업로드: {note.uploadDate}</span>
+                  {note.professor && <span>{note.professor} 교수님</span>}
+                  {note.semester && <span>학기: {note.semester}</span>}
+                  {note.createdAt && <span>업로드: {new Date(note.createdAt).toLocaleDateString()}</span>}
                 </div>
               </div>
             </div>
@@ -122,7 +136,7 @@ export function NoteViewer({ noteId }) {
           <CardContent>
             <div className="relative w-full bg-muted rounded-lg overflow-hidden min-h-[800px]">
               <img
-                src={note.previewImage || '/placeholder.svg'}
+                src={note.thumbnailUrl || '/placeholder.svg'}
                 alt="Note content"
                 className="w-full h-auto"
               />
@@ -233,8 +247,8 @@ export function NoteViewer({ noteId }) {
                 />
               </div>
               <div>
-                <p className="font-semibold">{uploader?.name}</p>
-                <p className="text-sm text-muted-foreground">@{uploader?.username || uploader?.studentId}</p>
+                <p className="font-semibold">{uploader?.displayId || 'Unknown'}</p>
+                {uploader?.id && <p className="text-sm text-muted-foreground">ID: {uploader.id}</p>}
               </div>
             </div>
             <Button variant="outline" size="sm" className="w-full" asChild>

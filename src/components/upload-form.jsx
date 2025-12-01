@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/select'
 import { Upload, File, X, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { fetchUploadMetadata, generateNoteSummary, uploadNote } from '@/services/mockApi'
+import { fetchUploadMetadata, generateNoteSummary } from '@/services/mockApi'
+import { createNoteMetadata, uploadFileToS3 } from '@/services/api'
 
 export function UploadForm() {
   const navigate = useNavigate()
@@ -55,6 +56,8 @@ export function UploadForm() {
   const courses = selectedDepartment?.subjects || []
   const selectedCourse = courses.find((course) => course.id === courseId)
   const professors = selectedCourse?.professors || []
+  const selectedMajor = selectedDepartment?.name || ''
+  const selectedSubject = selectedCourse?.name || ''
 
   const handleDrag = (e) => {
     e.preventDefault()
@@ -125,17 +128,22 @@ export function UploadForm() {
         description: '필기를 업로드하고 있습니다. 잠시만 기다려주세요.',
       })
 
-      await uploadNote({
-        title,
-        departmentId,
-        courseId,
-        professor,
+      // 1. 메타데이터 저장 및 presignedUrl 받기
+      const { noteId, presignedUrl, fileKey } = await createNoteMetadata({
+        fileName: file.name,
+        fileType: file.type || 'application/octet-stream',
         semester,
-        description,
-        subjectLabel: selectedDepartment?.subjectLabel,
-        fileName: file?.name,
-        aiSummary,
+        major: selectedMajor,
+        subject: selectedSubject,
+        professor,
+        description: description || undefined,
       })
+
+      // 2. S3에 파일 업로드
+      await uploadFileToS3(presignedUrl, file)
+
+      // 업로드 완료
+      console.log('Upload completed:', { noteId, fileKey })
 
       toast({
         title: '업로드 완료!',

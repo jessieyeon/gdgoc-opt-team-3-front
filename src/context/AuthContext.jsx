@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { getStoredToken, setStoredToken } from '@/services/api'
 
 const AuthContext = createContext({
   user: null,
+  token: null,
   setUser: () => {},
+  setToken: () => {},
   logout: () => {},
 })
 
@@ -18,7 +21,8 @@ function readStoredUser() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => readStoredUser())
+  const [user, setUserState] = useState(() => readStoredUser())
+  const [token, setTokenState] = useState(() => getStoredToken())
 
   useEffect(() => {
     try {
@@ -32,12 +36,23 @@ export function AuthProvider({ children }) {
     }
   }, [user])
 
+  const setUser = (userData) => {
+    setUserState(userData)
+  }
+
+  const setToken = (newToken) => {
+    setTokenState(newToken)
+    setStoredToken(newToken)
+  }
+
   const logout = () => {
-    setUser(null)
+    setUserState(null)
+    setTokenState(null)
+    setStoredToken(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider value={{ user, token, setUser, setToken, logout }}>
       {children}
     </AuthContext.Provider>
   )

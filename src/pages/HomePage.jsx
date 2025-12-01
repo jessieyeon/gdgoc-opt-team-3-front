@@ -39,15 +39,14 @@ function CurationCard({ icon, title, description, action, actionHref, highlights
 
 export default function HomePage() {
   const { user } = useAuth()
-  const studentId = user?.studentId
-  const { trendingNotes, personalizedNotes, contributors } = useHomePageData(studentId)
+  const { trendingNotes, personalizedNotes, contributors } = useHomePageData()
 
-  const trendingHighlights = trendingNotes.map((note) => `${note.title} · 👍 ${note.likes}`)
+  const trendingHighlights = trendingNotes.map((note) => `${note.title} · 👍 ${note.likes || 0}`)
   const personalizedHighlights = personalizedNotes.map(
-    (note) => `${note.title} · ${note.subject}`,
+    (note) => `${note.title} · ${note.major || '기타'}`,
   )
   const contributorHighlights = contributors.map(
-    (user) => `${user.username} · ${user.uploads}개 업로드`,
+    (contributor) => `${contributor.displayId || 'Unknown'} · ${contributor.uploadCount || 0}개 업로드`,
   )
 
   return (
@@ -98,7 +97,7 @@ export default function HomePage() {
             <CurationCard
               icon={<Star className="h-6 w-6 text-[#0f4a84]" />}
               title="For You"
-              description="학번 기반 전공 정보를 분석해 맞춤 필기를 추천해요"
+              description="전공 정보를 분석해 맞춤 필기를 추천해요"
               action="맞춤 필기 보기"
               actionHref="/notes"
               highlights={personalizedHighlights}

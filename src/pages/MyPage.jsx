@@ -30,7 +30,7 @@ export default function MyPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">{user.username || '마이페이지'}</h1>
-              <p className="text-muted-foreground">학번: {user.studentId}</p>
+              <p className="text-muted-foreground">아이디: @{user.username}</p>
             </div>
           </div>
 

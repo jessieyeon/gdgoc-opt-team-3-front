@@ -11,23 +11,36 @@ import {
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { loginWithRunUs } from '@/services/mockApi'
+import { login } from '@/services/api'
 import { useAuth } from '@/context/AuthContext.jsx'
 
 export default function LoginPage() {
   const { toast } = useToast()
   const navigate = useNavigate()
-  const { setUser } = useAuth()
-  const [studentId, setStudentId] = useState('')
+  const { setUser, setToken } = useAuth()
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
 
   const handleLogin = (e) => {
     e.preventDefault()
+    
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@yonsei\.ac\.kr$/
+    if (!emailRegex.test(email)) {
+      toast({
+        title: '이메일 형식 오류',
+        description: '연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setLoginLoading(true)
-    loginWithRunUs({ studentId, password })
+    login({ email, password })
       .then((response) => {
         setUser(response.user)
+        setToken(response.token)
         toast({
           title: '로그인 성공',
           description: '필기 업로드와 맞춤 추천을 이용할 수 있어요.',
@@ -52,18 +65,18 @@ export default function LoginPage() {
             <span className="font-bold text-3xl text-primary-foreground">Y</span>
           </div>
           <CardTitle className="text-2xl font-bold">연세 노트 로그인</CardTitle>
-          <CardDescription>런어스 계정(학번)으로 로그인하세요</CardDescription>
+          <CardDescription>연세 이메일과 비밀번호로 로그인하세요</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="studentId">학번</Label>
+              <Label htmlFor="email">연세 이메일</Label>
               <Input
-                id="studentId"
-                type="text"
-                placeholder="2024123456"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="username@yonsei.ac.kr"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>

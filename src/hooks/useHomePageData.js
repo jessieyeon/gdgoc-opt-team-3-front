@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fetchForYouNotes, fetchTopContributors, fetchTrendingNotes } from '@/services/mockApi'
+import { fetchNotes, fetchForYouNotes, fetchTopContributors } from '@/services/api'
 
-export function useHomePageData(studentId) {
+export function useHomePageData() {
   const [trendingNotes, setTrendingNotes] = useState([])
   const [personalizedNotes, setPersonalizedNotes] = useState([])
   const [contributors, setContributors] = useState([])
@@ -12,9 +12,9 @@ export function useHomePageData(studentId) {
     const fetchData = async () => {
       try {
         const [trending, personalized, topContributors] = await Promise.all([
-          fetchTrendingNotes(3),
-          studentId ? fetchForYouNotes(studentId, 3) : Promise.resolve([]),
-          fetchTopContributors(3),
+          fetchNotes({ sort: 'likes' }).then((data) => data.slice(0, 3)),
+          fetchForYouNotes().then((data) => data.slice(0, 3)),
+          fetchTopContributors().then((data) => data.slice(0, 3)),
         ])
 
         if (!mounted) return
@@ -35,7 +35,7 @@ export function useHomePageData(studentId) {
     return () => {
       mounted = false
     }
-  }, [studentId])
+  }, [])
 
   return { trendingNotes, personalizedNotes, contributors }
 }

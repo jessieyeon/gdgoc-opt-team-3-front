@@ -22,12 +22,12 @@ export function MyPageTabs() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.studentId) return
+    if (!user?.id) return
     setIsLoading(true)
-    fetchUserLibrary(user.studentId)
+    fetchUserLibrary(user.id)
       .then((data) => setLibrary(data))
       .finally(() => setIsLoading(false))
-  }, [user?.studentId])
+  }, [user?.id])
 
   const sections = [
     { value: 'my-notes', label: '내 필기', key: 'myNotes', description: '내가 업로드한 필기 목록입니다.' },

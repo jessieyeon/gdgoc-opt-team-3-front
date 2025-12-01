@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,29 +11,17 @@ import {
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { fetchUploadMetadata, registerUser } from '@/services/mockApi'
+import { signup } from '@/services/api'
 
 export default function RegisterPage() {
   const { toast } = useToast()
   const navigate = useNavigate()
   const [registerValues, setRegisterValues] = useState({
-    studentId: '',
-    name: '',
+    email: '',
     password: '',
     username: '',
-    departmentId: '',
   })
-  const [departments, setDepartments] = useState([])
   const [registerLoading, setRegisterLoading] = useState(false)
-
-  useEffect(() => {
-    fetchUploadMetadata().then((meta) => {
-      setDepartments(meta.departments)
-      if (meta.departments.length) {
-        setRegisterValues((prev) => ({ ...prev, departmentId: meta.departments[0].id }))
-      }
-    })
-  }, [])
 
   const handleRegisterChange = (field, value) => {
     setRegisterValues((prev) => ({ ...prev, [field]: value }))
@@ -41,12 +29,8 @@ export default function RegisterPage() {
 
   const handleRegister = (e) => {
     e.preventDefault()
-    const payload = {
-      ...registerValues,
-      departmentId: registerValues.departmentId || departments[0]?.id || '',
-    }
 
-    if (!payload.studentId || !payload.password || !payload.name || !payload.departmentId || !payload.username) {
+    if (!registerValues.email || !registerValues.password || !registerValues.username) {
       toast({
         title: '입력 항목을 확인해주세요',
         description: '모든 항목을 입력해주세요.',
@@ -55,8 +39,19 @@ export default function RegisterPage() {
       return
     }
 
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@yonsei\.ac\.kr$/
+    if (!emailRegex.test(registerValues.email)) {
+      toast({
+        title: '이메일 형식 오류',
+        description: '연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setRegisterLoading(true)
-    registerUser(payload)
+    signup(registerValues)
       .then(() => {
         toast({
           title: '회원가입 완료',
@@ -89,14 +84,18 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="register-studentId">학번 *</Label>
+              <Label htmlFor="register-email">연세 이메일 *</Label>
               <Input
-                id="register-studentId"
-                placeholder="2024123456"
-                value={registerValues.studentId}
-                onChange={(e) => handleRegisterChange('studentId', e.target.value)}
+                id="register-email"
+                type="email"
+                placeholder="username@yonsei.ac.kr"
+                value={registerValues.email}
+                onChange={(e) => handleRegisterChange('email', e.target.value)}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                * 연세대학교 이메일(@yonsei.ac.kr)만 사용 가능합니다.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="register-password">비밀번호 *</Label>
@@ -109,20 +108,10 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="register-name">이름 *</Label>
-              <Input
-                id="register-name"
-                placeholder="홍길동"
-                value={registerValues.name}
-                onChange={(e) => handleRegisterChange('name', e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="register-username">아이디 *</Label>
               <Input
                 id="register-username"
-                placeholder="연필장인"
+                placeholder="my_id_123"
                 value={registerValues.username}
                 onChange={(e) => handleRegisterChange('username', e.target.value)}
                 required
@@ -130,23 +119,6 @@ export default function RegisterPage() {
               <p className="text-xs text-muted-foreground">
                 * 필기 상세페이지와 Top Contributors에 표시될 아이디입니다.
               </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-dept">학과 *</Label>
-              <select
-                id="register-dept"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={registerValues.departmentId}
-                onChange={(e) => handleRegisterChange('departmentId', e.target.value)}
-                required
-              >
-                <option value="">학과를 선택하세요</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={registerLoading}>
               {registerLoading ? '등록 중...' : '회원가입'}

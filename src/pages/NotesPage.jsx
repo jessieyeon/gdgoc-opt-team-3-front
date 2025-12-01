@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Header } from '@/components/header'
 import { NotesList } from '@/components/notes-list'
 import { SubjectFilter } from '@/components/subject-filter'
-import { fetchNoteCategories, fetchNotes } from '@/services/mockApi'
+import { fetchNotes } from '@/services/api'
 
 export default function NotesPage() {
   const [subjects, setSubjects] = useState(['전체'])
@@ -12,49 +12,43 @@ export default function NotesPage() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    let mounted = true
-    fetchNoteCategories()
-      .then((list) => {
-        if (mounted) {
-          setSubjects(list)
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          setSubjects(['전체'])
-        }
-      })
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  useEffect(() => {
     let active = true
     setIsLoading(true)
     setError(null)
-    fetchNotes({ category: selectedSubject })
-      .then((data) => {
-        if (active) {
-          setNotes(data)
+
+    const loadNotes = async () => {
+      try {
+        const data = await fetchNotes({
+          sort: 'latest',
+          category: selectedSubject === '전체' ? undefined : selectedSubject,
+        })
+
+        if (!active) return
+
+        // 카테고리 목록 추출 (첫 로드 시)
+        if (subjects.length === 1 && data.length > 0) {
+          const categories = ['전체', ...new Set(data.map((note) => note.major).filter(Boolean))]
+          setSubjects(categories)
         }
-      })
-      .catch(() => {
-        if (active) {
-          setError('필기 목록을 불러오지 못했습니다.')
-          setNotes([])
-        }
-      })
-      .finally(() => {
+
+        setNotes(data)
+      } catch (err) {
+        if (!active) return
+        setError('필기 목록을 불러오지 못했습니다.')
+        setNotes([])
+      } finally {
         if (active) {
           setIsLoading(false)
         }
-      })
+      }
+    }
+
+    loadNotes()
 
     return () => {
       active = false
     }
-  }, [selectedSubject])
+  }, [selectedSubject, subjects.length])
 
   return (
     <div className="min-h-screen">
