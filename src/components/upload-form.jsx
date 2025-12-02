@@ -12,14 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Upload, File, X, Sparkles } from 'lucide-react'
+import { Upload, File, X, Sparkles, Lock } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { fetchUploadMetadata, generateNoteSummary } from '@/services/mockApi'
 import { createNoteMetadata, uploadFileToS3 } from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
 
 export function UploadForm() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user, updateUserUploadStatus } = useAuth()
   const [title, setTitle] = useState('')
   const [semester, setSemester] = useState('')
   const [departmentId, setDepartmentId] = useState('')
@@ -33,6 +35,21 @@ export function UploadForm() {
   const [aiSummary, setAiSummary] = useState(null)
   const [metadata, setMetadata] = useState({ semesters: [], departments: [] })
   const [metaLoading, setMetaLoading] = useState(true)
+
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+          <div className="rounded-full bg-muted p-4">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <p className="text-xl font-semibold">로그인을 해주세요!</p>
+          <p className="text-muted-foreground">필기를 업로드하려면 로그인이 필요합니다.</p>
+          <Button onClick={() => navigate('/login')}>로그인 하러 가기</Button>
+        </CardContent>
+      </Card>
+    )
+  }
 
   useEffect(() => {
     fetchUploadMetadata()
@@ -150,6 +167,8 @@ export function UploadForm() {
         description: '필기가 성공적으로 업로드되었습니다. 필기 탐색 페이지로 이동합니다.',
       })
 
+      updateUserUploadStatus(true)
+
       setTimeout(() => {
         navigate('/notes')
       }, 800)
@@ -179,13 +198,12 @@ export function UploadForm() {
           <div className="space-y-2">
             <Label>파일 *</Label>
             <div
-              className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
-                dragActive
+              className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${dragActive
+                ? 'border-primary bg-primary/5'
+                : file
                   ? 'border-primary bg-primary/5'
-                  : file
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-              }`}
+                  : 'border-border hover:border-primary/50'
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}

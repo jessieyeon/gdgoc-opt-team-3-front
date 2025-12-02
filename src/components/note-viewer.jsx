@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ThumbsUp, ThumbsDown, Download, Bookmark, Share2 } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Download, Bookmark, Share2, Lock } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 import { fetchNoteDetail, interactWithNote } from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
 
 export function NoteViewer({ noteId }) {
   const [note, setNote] = useState(null)
@@ -16,6 +17,22 @@ export function NoteViewer({ noteId }) {
   const [bookmarked, setBookmarked] = useState(false)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
+  const canDownload = user?.hasUploaded
+
+  const handleDownload = () => {
+    if (!user) {
+      alert('로그인이 필요한 서비스입니다.')
+      return
+    }
+    if (!canDownload) {
+      if (confirm('필기를 1개 이상 업로드해야 다운로드할 수 있습니다.\n업로드 페이지로 이동하시겠습니까?')) {
+        window.location.href = '/upload'
+      }
+      return
+    }
+    alert('다운로드가 시작됩니다. (데모)')
+  }
 
   useEffect(() => {
     if (!noteId) return
@@ -109,7 +126,7 @@ export function NoteViewer({ noteId }) {
   }
 
   const uploader = note.uploader || {}
-  const aiSummary = typeof note.aiSummary === 'string' 
+  const aiSummary = typeof note.aiSummary === 'string'
     ? { summary: note.aiSummary, difficulty: note.difficulty, estimatedTime: note.estimatedTime }
     : note.aiSummary || {}
   const relatedNotes = note.relatedNotes || []
@@ -174,9 +191,16 @@ export function NoteViewer({ noteId }) {
                 <Button variant="outline" size="icon">
                   <Share2 className="h-4 w-4" />
                 </Button>
-                <Button>
-                  <Download className="h-4 w-4 mr-2" />
-                  다운로드
+                <Button
+                  onClick={handleDownload}
+                  variant={canDownload ? "default" : "secondary"}
+                >
+                  {canDownload ? (
+                    <Download className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Lock className="h-4 w-4 mr-2" />
+                  )}
+                  {canDownload ? '다운로드' : '다운로드 잠김'}
                 </Button>
               </div>
             </div>

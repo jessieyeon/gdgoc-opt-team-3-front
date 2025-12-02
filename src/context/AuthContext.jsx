@@ -4,9 +4,9 @@ import { getStoredToken, setStoredToken } from '@/services/api'
 const AuthContext = createContext({
   user: null,
   token: null,
-  setUser: () => {},
-  setToken: () => {},
-  logout: () => {},
+  setUser: () => { },
+  setToken: () => { },
+  logout: () => { },
 })
 
 const STORAGE_KEY = 'yonsei-notes-auth'
@@ -51,8 +51,15 @@ export function AuthProvider({ children }) {
     setStoredToken(null)
   }
 
+  const updateUserUploadStatus = (hasUploaded) => {
+    if (user) {
+      const updatedUser = { ...user, hasUploaded }
+      setUserState(updatedUser)
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, setUser, setToken, logout }}>
+    <AuthContext.Provider value={{ user, token, setUser, setToken, logout, updateUserUploadStatus }}>
       {children}
     </AuthContext.Provider>
   )

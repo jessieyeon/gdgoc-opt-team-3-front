@@ -42,3 +42,5 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 
 CORS 오류가 발생하면 프론트엔드에서 해결하지 말고, 백엔드에서 CORS 설정을 확인해주세요.
 
+
+
