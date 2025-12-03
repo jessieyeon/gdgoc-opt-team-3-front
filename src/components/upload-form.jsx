@@ -111,15 +111,21 @@ export function UploadForm() {
     setGeneratingSummary(true)
     try {
       const summary = await generateNoteSummary({
-        fileName: file.name,
+        file, // 실제 파일 객체 전달
         title,
-        subject: selectedDepartment?.subjectLabel || '기타',
+        subject: selectedDepartment?.subjectLabel || selectedSubject || '기타',
+        professor: professor || undefined,
+        semester: semester || undefined,
       })
       setAiSummary(summary)
       setDescription(summary.summary)
     } catch (error) {
-      console.error('[v0] Failed to generate summary:', error)
-      alert('AI 요약 생성에 실패했습니다')
+      console.error('Failed to generate summary:', error)
+      toast({
+        title: 'AI 요약 생성 실패',
+        description: error.message || 'AI 요약 생성에 실패했습니다.',
+        variant: 'destructive',
+      })
     } finally {
       setGeneratingSummary(false)
     }

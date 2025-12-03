@@ -72,8 +72,8 @@ export function setStoredToken(token) {
  * POST /auth/signup
  */
 export async function signup({ email, password, username }) {
-  if (!email || !password || !username) {
-    throw new Error('모든 정보를 입력해주세요.')
+  if (!email || !password) {
+    throw new Error('이메일과 비밀번호를 입력해주세요.')
   }
 
   // 이메일 형식 검증
@@ -82,14 +82,14 @@ export async function signup({ email, password, username }) {
     throw new Error('연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.')
   }
 
-  // 백엔드 API 스펙에 맞게 전송 (email을 username 필드에 넣거나 별도 필드로)
-  // OpenAPI 스펙상 username 필드를 사용하므로, 이메일을 username으로 전송
+  // 백엔드 API 스펙에 맞게 email, password, username, code 전송
   const response = await apiRequest('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({ 
-      username: email, // 이메일을 username 필드에 전송
-      password, 
-      displayId: username, // 표시용 아이디는 별도 필드로 (백엔드가 지원하는 경우)
+      email, // email 필드 직접 전송
+      password,
+      username: username || email.substring(0, email.indexOf('@')), // username이 없으면 email에서 자동 생성
+      code: '', // TODO: 이메일 인증 코드 추가 필요
     }),
   })
 
@@ -111,10 +111,10 @@ export async function login({ email, password }) {
     throw new Error('연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.')
   }
 
-  // 백엔드 API 스펙에 맞게 전송 (이메일을 username 필드에 넣기)
+  // 백엔드 API 스펙에 맞게 email, password 직접 전송
   const response = await apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: email, password }),
+    body: JSON.stringify({ email, password }), // email 필드 직접 사용
   })
 
   // 토큰 저장

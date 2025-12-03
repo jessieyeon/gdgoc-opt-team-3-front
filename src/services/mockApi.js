@@ -461,18 +461,51 @@ export async function fetchUploadMetadata() {
   })
 }
 
-export async function generateNoteSummary({ title, subject, fileName }) {
-  return delay({
-    keyPoints: [
-      `${subject} 핵심 개념 요약`,
-      '시험에 자주 나오는 문제 유형',
-      '실전 적용 팁과 주의사항',
-    ],
-    difficulty: ['입문', '초급', '중급', '중상급'][Math.floor(Math.random() * 4)],
-    estimatedTime: `${30 + Math.floor(Math.random() * 40)}분`,
-    summary: `${title} 자료를 기반으로 ${subject}의 핵심 내용을 정리했습니다. 파일(${fileName})을 분석하여 학습 효율을 높일 수 있는 포인트를 제공합니다.`,
-    tags: [subject, '시험대비'],
-  })
+/**
+ * AI 요약 생성 (실제 AI 서비스 호출)
+ * @param {Object} params - { file: File, title: string, subject: string, professor?: string, semester?: string }
+ */
+export async function generateNoteSummary({ file, title, subject, professor, semester }) {
+  // AI 서비스 URL (환경변수로 관리 가능)
+  const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:3001'
+  
+  if (!file) {
+    throw new Error('파일이 필요합니다.')
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (title) formData.append('title', title)
+    if (subject) formData.append('subject', subject)
+    if (professor) formData.append('professor', professor)
+    if (semester) formData.append('semester', semester)
+
+    const response = await fetch(`${AI_SERVICE_URL}/api/summarize`, {
+      method: 'POST',
+      body: formData,
+      // FormData를 사용할 때는 Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 boundary 설정)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(errorData.error || `AI 요약 생성 실패: ${response.status}`)
+    }
+
+    const result = await response.json()
+    
+    // AI 서비스 응답 형식에 맞게 반환
+    return {
+      keyPoints: result.keyPoints || [],
+      difficulty: result.difficulty || '중급',
+      estimatedTime: result.estimatedTime || '1시간',
+      summary: result.summary || '',
+      tags: result.tags || [],
+    }
+  } catch (error) {
+    console.error('AI 요약 생성 오류:', error)
+    throw new Error(`AI 요약 생성에 실패했습니다: ${error.message}`)
+  }
 }
 
 export async function uploadNote({

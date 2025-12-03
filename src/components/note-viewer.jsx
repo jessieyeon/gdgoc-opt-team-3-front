@@ -213,9 +213,9 @@ export function NoteViewer({ noteId }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <span className="text-primary font-bold">AI</span>
+                <span className="text-primary font-bold">🔍</span>
               </div>
-              필기 요약
+              필기 보기
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
