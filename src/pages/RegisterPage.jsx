@@ -20,32 +20,26 @@ export default function RegisterPage() {
     email: '',
     password: '',
     username: '',
+    code: '',
   })
-  const [verificationCode, setVerificationCode] = useState('')
-  const [codeSent, setCodeSent] = useState(false)
-  const [sendingCode, setSendingCode] = useState(false)
   const [registerLoading, setRegisterLoading] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
+  const [codeSent, setCodeSent] = useState(false)
 
   const handleRegisterChange = (field, value) => {
     setRegisterValues((prev) => ({ ...prev, [field]: value }))
-    // 이메일이 변경되면 인증 코드 상태 초기화
-    if (field === 'email') {
-      setCodeSent(false)
-      setVerificationCode('')
-    }
   }
 
   const handleSendCode = async () => {
     if (!registerValues.email) {
       toast({
         title: '이메일을 입력해주세요',
-        description: '이메일을 먼저 입력한 후 인증 코드를 요청하세요.',
+        description: '인증번호를 받을 이메일을 입력해주세요.',
         variant: 'destructive',
       })
       return
     }
 
-    // 이메일 형식 검증
     const emailRegex = /^[^\s@]+@yonsei\.ac\.kr$/
     if (!emailRegex.test(registerValues.email)) {
       toast({
@@ -61,13 +55,13 @@ export default function RegisterPage() {
       await sendEmailCode(registerValues.email)
       setCodeSent(true)
       toast({
-        title: '인증 코드 전송 완료',
-        description: '이메일로 인증 코드가 전송되었습니다. 이메일을 확인해주세요.',
+        title: '인증번호 발송 완료',
+        description: '입력하신 이메일로 인증번호가 발송되었습니다.',
       })
-    } catch (err) {
+    } catch (error) {
       toast({
-        title: '인증 코드 전송 실패',
-        description: err.message || '인증 코드 전송에 실패했습니다.',
+        title: '인증번호 발송 실패',
+        description: error.message || '인증번호 발송 중 오류가 발생했습니다.',
         variant: 'destructive',
       })
     } finally {
@@ -78,7 +72,7 @@ export default function RegisterPage() {
   const handleRegister = (e) => {
     e.preventDefault()
 
-    if (!registerValues.email || !registerValues.password || !registerValues.username) {
+    if (!registerValues.email || !registerValues.password || !registerValues.username || !registerValues.code) {
       toast({
         title: '입력 항목을 확인해주세요',
         description: '모든 항목을 입력해주세요.',
@@ -98,18 +92,8 @@ export default function RegisterPage() {
       return
     }
 
-    // 인증 코드 검증
-    if (!verificationCode) {
-      toast({
-        title: '인증 코드를 입력해주세요',
-        description: '이메일로 받은 인증 코드를 입력해야 회원가입할 수 있습니다.',
-        variant: 'destructive',
-      })
-      return
-    }
-
     setRegisterLoading(true)
-    signup({ ...registerValues, code: verificationCode })
+    signup(registerValues)
       .then(() => {
         toast({
           title: '회원가입 완료',
@@ -152,7 +136,6 @@ export default function RegisterPage() {
                   onChange={(e) => handleRegisterChange('email', e.target.value)}
                   required
                   disabled={codeSent}
-                  className="flex-1"
                 />
                 <Button
                   type="button"
@@ -160,7 +143,7 @@ export default function RegisterPage() {
                   onClick={handleSendCode}
                   disabled={sendingCode || codeSent || !registerValues.email}
                 >
-                  {sendingCode ? '전송 중...' : codeSent ? '전송 완료' : '인증 코드 전송'}
+                  {sendingCode ? '전송 중...' : codeSent ? '전송됨' : '인증번호 전송'}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -170,20 +153,17 @@ export default function RegisterPage() {
 
             {codeSent && (
               <div className="space-y-2">
-                <Label htmlFor="verification-code">인증 코드 *</Label>
+                <Label htmlFor="register-code">인증번호 *</Label>
                 <Input
-                  id="verification-code"
-                  type="text"
-                  placeholder="이메일로 받은 인증 코드를 입력하세요"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
+                  id="register-code"
+                  placeholder="인증번호 6자리 입력"
+                  value={registerValues.code}
+                  onChange={(e) => handleRegisterChange('code', e.target.value)}
                   required
                 />
-                <p className="text-xs text-muted-foreground">
-                  * 이메일로 전송된 인증 코드를 입력해주세요.
-                </p>
               </div>
             )}
+
             <div className="space-y-2">
               <Label htmlFor="register-password">비밀번호 *</Label>
               <Input
@@ -207,7 +187,7 @@ export default function RegisterPage() {
                 * 필기 상세페이지와 Top Contributors에 표시될 아이디입니다.
               </p>
             </div>
-            <Button type="submit" className="w-full" size="lg" disabled={registerLoading}>
+            <Button type="submit" className="w-full" size="lg" disabled={registerLoading || !codeSent}>
               {registerLoading ? '등록 중...' : '회원가입'}
             </Button>
           </form>

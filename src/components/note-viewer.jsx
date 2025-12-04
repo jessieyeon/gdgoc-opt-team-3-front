@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 import { fetchNoteDetail, interactWithNote } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
+import { FactCheckPanel } from '@/components/fact-check-panel'
 
 export function NoteViewer({ noteId }) {
   const [note, setNote] = useState(null)
@@ -130,6 +131,10 @@ export function NoteViewer({ noteId }) {
     ? { summary: note.aiSummary, difficulty: note.difficulty, estimatedTime: note.estimatedTime }
     : note.aiSummary || {}
   const relatedNotes = note.relatedNotes || []
+  
+  // Fact-Check를 위한 노트 내용 (AI summary 또는 description 사용)
+  const noteContentForFactCheck = aiSummary.summary || note.description || note.summary || ''
+  const subjectForFactCheck = note.subject || note.major || ''
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -209,6 +214,12 @@ export function NoteViewer({ noteId }) {
       </div>
 
       <div className="space-y-6">
+        {/* Fact-Check 패널 */}
+        <FactCheckPanel 
+          noteContent={noteContentForFactCheck}
+          subject={subjectForFactCheck}
+        />
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

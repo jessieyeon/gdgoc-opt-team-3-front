@@ -71,6 +71,10 @@ export function setStoredToken(token) {
  * 회원가입
  * POST /auth/signup
  */
+/**
+ * 회원가입
+ * POST /auth/signup
+ */
 export async function signup({ email, password, username, code }) {
   if (!email || !password || !username || !code) {
     throw new Error('모든 정보를 입력해주세요.')
@@ -82,14 +86,39 @@ export async function signup({ email, password, username, code }) {
     throw new Error('연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.')
   }
 
+  // 백엔드 API 스펙에 맞게 전송
+  // SignupRequest: email, password, username, code
   const response = await apiRequest('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({
       email,
       password,
-      username,
+      username, // 표시용 아이디
       code,
     }),
+  })
+
+  return response
+}
+
+/**
+ * 이메일 인증 코드 발송
+ * POST /auth/email-code
+ */
+export async function sendEmailCode(email) {
+  if (!email) {
+    throw new Error('이메일을 입력해주세요.')
+  }
+
+  // 이메일 형식 검증
+  const emailRegex = /^[^\s@]+@yonsei\.ac\.kr$/
+  if (!emailRegex.test(email)) {
+    throw new Error('연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.')
+  }
+
+  const response = await apiRequest('/auth/email-code', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
   })
 
   return response
@@ -110,7 +139,7 @@ export async function login({ email, password }) {
     throw new Error('연세대학교 이메일(@yonsei.ac.kr)을 입력해주세요.')
   }
 
-  // 백엔드 API 스펙에 맞게 전송
+  // 백엔드 API 스펙에 맞게 전송 (이메일을 username 필드에 넣기)
   const response = await apiRequest('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
@@ -143,23 +172,6 @@ export async function login({ email, password }) {
 //
 //   return response
 // }
-
-/**
- * 이메일 인증 코드 전송
- * POST /auth/email-code
- */
-export async function sendEmailCode(email) {
-  if (!email) {
-    throw new Error('이메일을 입력해주세요.')
-  }
-
-  const response = await apiRequest('/auth/email-code', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  })
-
-  return response
-}
 
 // ==========================================
 // [Notes] 필기 목록 조회
@@ -221,23 +233,6 @@ export async function interactWithNote(noteId, type) {
   return response
 }
 
-/**
- * 필기 AI 요약 정보 업데이트
- * PUT /notes/{noteId}/ai-summary
- */
-export async function updateNoteAiSummary(noteId, aiSummary) {
-  if (!noteId || !aiSummary) {
-    throw new Error('필기 ID와 AI 요약 정보가 필요합니다.')
-  }
-
-  const response = await apiRequest(`/notes/${noteId}/ai-summary`, {
-    method: 'PUT',
-    body: JSON.stringify(aiSummary),
-  })
-
-  return response
-}
-
 // ==========================================
 // [Notes] 필기 업로드
 // ==========================================
@@ -269,12 +264,17 @@ export async function createNoteMetadata({
     ...(description && { description }),
   }
 
-  const response = await apiRequest('/notes', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-
   return response
+}
+
+/**
+ * AI 요약 업데이트 (임시 - 백엔드 미구현)
+ * POST /notes/{noteId}/ai-summary
+ */
+export async function updateNoteAiSummary(noteId, aiSummary) {
+  console.log('Mock updateNoteAiSummary called:', { noteId, aiSummary })
+  // 백엔드 구현 전까지 성공으로 처리
+  return { success: true }
 }
 
 /**
@@ -347,3 +347,107 @@ export async function fetchTopContributors() {
 
   return response
 }
+
+// ==========================================
+// [AI] Fact-Checking
+// ==========================================
+
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:3001'
+
+/**
+ * AI 서비스 요청 기본 함수
+ */
+async function aiServiceRequest(endpoint, options = {}) {
+  const url = `${AI_SERVICE_URL}${endpoint}`
+
+  const config = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  }
+
+  try {
+    const response = await fetch(url, config)
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        error: response.statusText,
+        message: response.statusText
+      }))
+      throw new Error(errorData.error || errorData.message || `AI 서비스 요청 실패: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    if (error.message.includes('CORS')) {
+      throw new Error('CORS 오류가 발생했습니다. AI 서비스에서 CORS 설정을 확인해주세요.')
+    }
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error('AI 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+/**
+ * 전체 노트에 대한 사실 검증
+ * POST /api/fact-check
+ */
+export async function factCheckNote({ noteContent, subject, checkAll = false }) {
+  if (!noteContent || noteContent.trim().length < 100) {
+    throw new Error('노트 내용이 필요하며 최소 100자 이상이어야 합니다.')
+  }
+
+  const response = await aiServiceRequest('/api/fact-check', {
+    method: 'POST',
+    body: JSON.stringify({
+      noteContent,
+      subject,
+      checkAll,
+    }),
+  })
+
+  return response
+}
+
+/**
+ * 노트에서 검증 가능한 주장만 추출
+ * POST /api/extract-claims
+ */
+export async function extractClaims({ noteContent, subject }) {
+  if (!noteContent || noteContent.trim().length < 100) {
+    throw new Error('노트 내용이 필요하며 최소 100자 이상이어야 합니다.')
+  }
+
+  const response = await aiServiceRequest('/api/extract-claims', {
+    method: 'POST',
+    body: JSON.stringify({
+      noteContent,
+      subject,
+    }),
+  })
+
+  return response
+}
+
+/**
+ * 단일 주장 검증
+ * POST /api/verify-claim
+ */
+export async function verifyClaim({ claim }) {
+  if (!claim || !claim.text) {
+    throw new Error('검증할 주장이 필요합니다.')
+  }
+
+  const response = await aiServiceRequest('/api/verify-claim', {
+    method: 'POST',
+    body: JSON.stringify({
+      claim,
+    }),
+  })
+
+  return response
+}
+
