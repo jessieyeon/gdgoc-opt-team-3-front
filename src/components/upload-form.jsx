@@ -394,6 +394,8 @@ export function UploadForm() {
                 <span>난이도: {aiSummary.difficulty}</span>
                 <span>•</span>
                 <span>예상 시간: {aiSummary.estimatedTime}</span>
+                <span>•</span>
+                <span className="text-blue-600 font-medium">정확도: {aiSummary.accuracy}%</span>
               </div>
             </div>
           )}

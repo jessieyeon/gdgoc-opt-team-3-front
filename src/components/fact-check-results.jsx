@@ -36,7 +36,11 @@ export function FactCheckResults({ factCheckData }) {
           <Separator />
 
           {/* 통계 요약 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{report.summary.accuracy}%</div>
+              <div className="text-xs text-muted-foreground">정확도</div>
+            </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{report.summary.correct}</div>
               <div className="text-xs text-muted-foreground">정확</div>
