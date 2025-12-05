@@ -107,13 +107,31 @@ export function UploadForm() {
     setDragActive(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0])
+      const droppedFile = e.dataTransfer.files[0]
+      if (droppedFile.type !== 'application/pdf' && !droppedFile.name.toLowerCase().endsWith('.pdf')) {
+        toast({
+          title: '지원하지 않는 파일 형식',
+          description: 'PDF 파일만 업로드 가능합니다.',
+          variant: 'destructive',
+        })
+        return
+      }
+      setFile(droppedFile)
     }
   }
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
+      const selectedFile = e.target.files[0]
+      if (selectedFile.type !== 'application/pdf' && !selectedFile.name.toLowerCase().endsWith('.pdf')) {
+        toast({
+          title: '지원하지 않는 파일 형식',
+          description: 'PDF 파일만 업로드 가능합니다.',
+          variant: 'destructive',
+        })
+        return
+      }
+      setFile(selectedFile)
     }
   }
 
@@ -265,7 +283,7 @@ export function UploadForm() {
                   <div>
                     <p className="text-sm font-medium">파일을 드래그하거나 클릭하여 업로드</p>
                     <p className="text-xs text-muted-foreground">
-                      PDF, Word, 이미지 등 모든 형식 지원 (최대 50MB)
+                      PDF 형식만 지원 (최대 50MB)
                     </p>
                   </div>
                   <input
@@ -273,7 +291,7 @@ export function UploadForm() {
                     id="file-upload"
                     className="hidden"
                     onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
+                    accept=".pdf"
                   />
                   <Button
                     type="button"
